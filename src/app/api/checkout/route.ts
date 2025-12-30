@@ -7,44 +7,33 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2024-12-18.acacia', 
 });
 
+// Exemplo de como deve estar a sua API de Checkout
 export async function POST(req: Request) {
   try {
-    const { servico, preco, agendamentoId } = await req.json();
+    const { servico, preco, cliente_nome, whatsapp, data_nascimento } = await req.json();
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'brl',
-            product_data: { 
-              name: servico,
-              description: 'Agendamento Mene Solution',
-            },
-            unit_amount: Math.round(preco * 100), // Garante número inteiro para centavos
+      line_items: [{
+        price_data: {
+          currency: 'brl',
+          product_data: { 
+            name: servico,
+            description: `Cliente: ${cliente_nome} - Zap: ${whatsapp}` 
           },
-          quantity: 1,
+          unit_amount: preco * 100,
         },
-      ],
+        quantity: 1,
+      }],
       mode: 'payment',
-      // Certifique-se de que esta variável está no seu .env.local
       success_url: `${process.env.NEXT_PUBLIC_URL}/perfil?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_URL}/perfil?canceled=true`,
-      metadata: { 
-        agendamentoId: agendamentoId 
-      },
+      cancel_url: `${process.env.NEXT_PUBLIC_URL}/`,
     });
 
-    return NextResponse.json({ id: session.id, url: session.url });
-
-  } catch (error: unknown) {
-    // Tratamento de erro seguro para TypeScript
-    const message = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error('Erro no Checkout:', message);
-    
-    return NextResponse.json(
-      { error: message }, 
-      { status: 500 }
-    );
+    return NextResponse.json({ id: session.id });
+  } catch (error) {
+    console.error("Erro Stripe:", error);
+    return NextResponse.json({ error: "Falha ao gerar checkout" }, { status: 500 });
   }
 }
+  
