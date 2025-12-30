@@ -1,21 +1,24 @@
-// src/components/ServiceCard.tsx
 interface ServiceProps {
   nome: string;
   preco: number;
   descricao: string;
+  isLogged: boolean;
 }
 
-export default function ServiceCard({ nome, preco, descricao }: ServiceProps) {
+export default function ServiceCard({ nome, preco, descricao, isLogged }: ServiceProps) {
   return (
-    <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-xl hover:border-amber-500 transition-all group">
-      <h3 className="text-xl font-bold text-white group-hover:text-amber-500">{nome}</h3>
-      <p className="text-zinc-500 text-sm mt-2">{descricao}</p>
-      <div className="mt-4 flex justify-between items-center">
-        <span className="text-amber-500 font-mono text-lg">R$ {preco.toFixed(2)}</span>
-        <button className="bg-white text-black text-xs font-bold py-2 px-4 rounded-lg uppercase tracking-wider hover:bg-amber-500 transition-colors">
+    <div className="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 flex justify-between items-center group hover:border-amber-500/50 transition-all">
+      <div>
+        <h4 className="font-bold text-lg">{nome}</h4>
+        <p className="text-zinc-500 text-sm">{descricao}</p>
+        <p className="text-amber-500 font-bold mt-2">R$ {preco.toFixed(2)}</p>
+      </div>
+      
+      {isLogged && (
+        <button className="bg-white text-black px-4 py-2 rounded-lg text-xs font-black uppercase hover:bg-amber-500 transition-colors">
           Selecionar
         </button>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,99 +1,63 @@
 "use client"
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { loadStripe } from '@stripe/stripe-js';
+import ServiceCard from "@/componetes/ServiceCard";
+import BookingForm from "@/componetes/BookingForm";
+import Link from 'next/link';
 
-export default function BookingForm() {
-  const [servico, setServico] = useState('Corte + Barba - R$ 80,00');
-  const [data, setData] = useState('');
-  const [hora, setHora] = useState('');
-  const [nome, setNome] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [nascimento, setNascimento] = useState('');
-  const [metodo, setMetodo] = useState('stripe'); // stripe ou local
-  const [loading, setLoading] = useState(false);
+export default function Home() {
+  const [user, setUser] = useState<any>(null);
+  const fotos = ["/corte1.jpg", "/corte2.jpg", "/corte3.jpg"]; 
 
-  const handleAgendamento = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    const preco = servico.includes('80') ? 80 : servico.includes('50') ? 50 : 40;
-
-    const dadosAgendamento = {
-      servico,
-      data_hora: `${data} ${hora}`,
-      cliente_nome: nome,
-      whatsapp: whatsapp,
-      data_nascimento: nascimento,
-      metodo_pagamento: metodo,
-      pago: false
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
     };
-
-    if (metodo === 'local') {
-      // SALVAR DIRETO NO SUPABASE (PAGAMENTO NO LOCAL)
-      const { error } = await supabase.from('agendamentos').insert([dadosAgendamento]);
-      
-      if (error) {
-        alert("Erro ao salvar no banco. Verifique as colunas no Supabase.");
-        console.error(error);
-      } else {
-        alert("Agendado com sucesso! Pagamento será feito na barbearia.");
-        window.location.href = "/perfil";
-      }
-    } else {
-      // ENVIAR PARA O STRIPE
-      try {
-        const response = await fetch('/api/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...dadosAgendamento, preco }),
-        });
-
-        const session = await response.json();
-        const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-        await stripe?.redirectToCheckout({ sessionId: session.id });
-      } catch (err) {
-        alert("Erro ao gerar link de pagamento.");
-      }
-    }
-    setLoading(false);
-  };
+    checkUser();
+  }, []);
 
   return (
-    <form onSubmit={handleAgendamento} className="bg-zinc-900 p-8 rounded-3xl border border-zinc-800 space-y-4">
-      <h4 className="text-amber-500 font-black italic uppercase text-center mb-6">Agende seu Estilo</h4>
+    <div className="space-y-20 pb-20 bg-black text-white">
       
-      <input type="text" placeholder="Seu Nome Completo" required className="w-full bg-black border border-zinc-800 p-3 rounded-xl outline-none focus:border-amber-500" onChange={(e) => setNome(e.target.value)} />
-      
-      <input type="tel" placeholder="WhatsApp (ex: 11958663599)" required className="w-full bg-black border border-zinc-800 p-3 rounded-xl outline-none focus:border-amber-500" onChange={(e) => setWhatsapp(e.target.value)} />
+      {/* Hero Section */}
+      <section className="h-[70vh] flex flex-col justify-center items-center text-center px-4 bg-zinc-950 border-b border-zinc-900">
+        <h2 className="text-4xl md:text-6xl font-black mb-4 uppercase italic">
+          &quot;O seu estilo é a sua marca.&quot;
+        </h2>
+        <p className="text-amber-500 font-bold tracking-[0.3em] text-sm md:text-base">
+          TRANSFORME SUA AUTOESTIMA NA MENE BARBEARIA
+        </p>
+      </section>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-[10px] text-zinc-500 uppercase font-bold ml-2">Nascimento</label>
-          <input type="date" required className="w-full bg-black border border-zinc-800 p-3 rounded-xl outline-none" onChange={(e) => setNascimento(e.target.value)} />
+      {/* Serviços + Agendamento */}
+      <section id="servicos" className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold border-l-4 border-amber-500 pl-4 uppercase tracking-tighter">
+            Nossos Serviços
+          </h3>
+          {/* Passamos a informação se o usuário está logado para o Card */}
+          <ServiceCard nome="Corte Masculino" preco={50} descricao="Corte moderno com acabamento premium." isLogged={!!user} />
+          <ServiceCard nome="Barba & Toalha Quente" preco={40} descricao="Tratamento completo para sua barba." isLogged={!!user} />
+          <ServiceCard nome="Combo Mene" preco={80} descricao="Corte + Barba + Hidratação." isLogged={!!user} />
         </div>
+
         <div>
-          <label className="text-[10px] text-zinc-500 uppercase font-bold ml-2">Data do Corte</label>
-          <input type="date" required className="w-full bg-black border border-zinc-800 p-3 rounded-xl outline-none" onChange={(e) => setData(e.target.value)} />
+          <h3 className="text-2xl font-bold mb-6 uppercase tracking-tighter">Agendamento</h3>
+          {user ? (
+            <BookingForm />
+          ) : (
+            <div className="bg-zinc-900 p-10 rounded-3xl border border-dashed border-zinc-800 text-center space-y-4">
+              <p className="text-zinc-400 uppercase text-sm font-bold">Faça login para realizar um agendamento</p>
+              <Link href="/login" className="inline-block bg-amber-500 text-black px-8 py-3 rounded-full font-black uppercase text-xs hover:bg-amber-400 transition-all">
+                Entrar agora
+              </Link>
+            </div>
+          )}
         </div>
-      </div>
+      </section>
 
-      <input type="time" required className="w-full bg-black border border-zinc-800 p-3 rounded-xl outline-none" onChange={(e) => setHora(e.target.value)} />
-
-      <select className="w-full bg-black border border-zinc-800 p-3 rounded-xl outline-none" onChange={(e) => setServico(e.target.value)}>
-        <option>Corte + Barba - R$ 80,00</option>
-        <option>Corte Masculino - R$ 50,00</option>
-        <option>Barba & Toalha Quente - R$ 40,00</option>
-      </select>
-
-      <div className="flex gap-2 p-1 bg-black rounded-xl border border-zinc-800">
-        <button type="button" onClick={() => setMetodo('stripe')} className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition ${metodo === 'stripe' ? 'bg-amber-500 text-black' : 'text-zinc-500'}`}>Pagar Agora</button>
-        <button type="button" onClick={() => setMetodo('local')} className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition ${metodo === 'local' ? 'bg-amber-500 text-black' : 'text-zinc-500'}`}>Pagar no Local</button>
-      </div>
-
-      <button disabled={loading} className="w-full bg-amber-500 hover:bg-amber-400 text-black font-black uppercase py-4 rounded-xl transition-all duration-300">
-        {loading ? 'Processando...' : 'Confirmar Agendamento'}
-      </button>
-    </form>
+      {/* Galeria... (continua igual) */}
+    </div>
   );
 }
