@@ -62,7 +62,7 @@ export default function Home() {
               nome="Corte Masculino" 
               preco={50} 
               descricao="Corte moderno com acabamento premium." 
-              videoUrl="/videos/corte.mp4" 
+              videoUrl="/videos/corte.mp4"
               onClick={handleAgendar}
             />
             <ServiceCard 
