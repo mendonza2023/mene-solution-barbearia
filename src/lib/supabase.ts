@@ -1,14 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Usamos um link fake (placeholder) apenas para o Next.js não travar o build caso as variáveis demorem a carregar
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
 
-// Verificação de segurança: Se as chaves sumirem, o console do navegador vai te avisar
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('ERRO: Chaves do Supabase não encontradas! Verifique seu arquivo .env.local ou as variáveis na Vercel.');
-}
-
-export const supabase = createClient(
-  supabaseUrl || '', 
-  supabaseAnonKey || ''
-);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
