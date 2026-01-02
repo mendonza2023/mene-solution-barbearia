@@ -10,6 +10,7 @@ export default function Perfil() {
   const [loading, setLoading] = useState(true);
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [mostrarFormCartao, setMostrarFormCartao] = useState(false); // NOVO: Estado para o formulário
   const router = useRouter();
 
   useEffect(() => {
@@ -41,6 +42,20 @@ export default function Perfil() {
     });
     if (error) alert("Erro ao atualizar");
     else alert("Perfil atualizado com sucesso!");
+  };
+
+  // Função para quando o cliente decide pagar no local
+  const pagarNoLocal = async (id: string) => {
+    const { error } = await supabase
+      .from('agendamentos')
+      .update({ metodo_pagamento: 'local' })
+      .eq('id', id);
+
+    if (error) alert("Erro ao atualizar");
+    else {
+      alert("Certo! Aguardamos você na barbearia.");
+      window.location.reload(); // Recarrega para atualizar o status
+    }
   };
 
   if (loading) return <div className="min-h-screen bg-black text-amber-500 p-10 font-black uppercase italic">Carregando Mene Solution...</div>;
@@ -83,12 +98,31 @@ export default function Perfil() {
 
           <section>
             <h2 className="text-xl font-black uppercase italic mb-6 border-l-4 border-zinc-500 pl-4 text-zinc-400">Meus Cartões</h2>
-            <div className="bg-zinc-900/50 p-6 rounded-3xl border border-dashed border-zinc-800 text-center">
-              <p className="text-xs text-zinc-500 uppercase font-bold mb-4">Nenhum cartão cadastrado</p>
-              <button className="bg-zinc-800 text-white font-black uppercase text-[10px] px-6 py-2 rounded-full hover:bg-zinc-700 transition-all">
-                + Adicionar Novo Cartão
-              </button>
-            </div>
+            
+            {!mostrarFormCartao ? (
+              <div className="bg-zinc-900/50 p-6 rounded-3xl border border-dashed border-zinc-800 text-center">
+                <p className="text-xs text-zinc-500 uppercase font-bold mb-4">Nenhum cartão cadastrado</p>
+                <button 
+                  onClick={() => setMostrarFormCartao(true)}
+                  className="bg-zinc-800 text-white font-black uppercase text-[10px] px-6 py-2 rounded-full hover:bg-zinc-700 transition-all"
+                >
+                  + Adicionar Novo Cartão
+                </button>
+              </div>
+            ) : (
+              <div className="bg-zinc-900 p-6 rounded-3xl border border-amber-500/30 space-y-4 animate-in fade-in zoom-in duration-300">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-[10px] font-black uppercase text-amber-500">Novo Cartão</h3>
+                  <button onClick={() => setMostrarFormCartao(false)} className="text-zinc-500 text-[10px] uppercase font-bold">Cancelar</button>
+                </div>
+                <input type="text" placeholder="NÚMERO DO CARTÃO" className="w-full bg-black border border-zinc-800 p-3 rounded-xl text-xs outline-none focus:border-amber-500 text-white placeholder:text-zinc-700" />
+                <div className="grid grid-cols-2 gap-4">
+                  <input type="text" placeholder="MM/AA" className="w-full bg-black border border-zinc-800 p-3 rounded-xl text-xs outline-none focus:border-amber-500 text-white placeholder:text-zinc-700" />
+                  <input type="text" placeholder="CVC" className="w-full bg-black border border-zinc-800 p-3 rounded-xl text-xs outline-none focus:border-amber-500 text-white placeholder:text-zinc-700" />
+                </div>
+                <button className="w-full bg-amber-500 text-black font-black uppercase text-[10px] py-3 rounded-xl">Salvar Cartão</button>
+              </div>
+            )}
           </section>
         </div>
 
@@ -118,7 +152,10 @@ export default function Perfil() {
                     <button className="bg-white text-black text-[10px] font-black uppercase py-2 rounded-lg hover:bg-zinc-200">
                       Pagar com Cartão/Pix
                     </button>
-                    <button className="bg-zinc-800 text-zinc-400 text-[10px] font-black uppercase py-2 rounded-lg hover:text-white transition-all">
+                    <button 
+                      onClick={() => pagarNoLocal(item.id)}
+                      className="bg-zinc-800 text-zinc-400 text-[10px] font-black uppercase py-2 rounded-lg hover:text-white transition-all"
+                    >
                       Pagar no Local
                     </button>
                   </div>
