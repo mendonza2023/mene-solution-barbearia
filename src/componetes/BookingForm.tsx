@@ -7,10 +7,10 @@ export default function BookingForm() {
   const [servico, setServico] = useState('');
   const [data, setData] = useState('');
   const [hora, setHora] = useState('');
+  const [metodoPagamento, setMetodoPagamento] = useState<'stripe' | 'local'>('stripe'); // Novo estado
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Tabela de preços tipada corretamente
   const precos: Record<string, number> = {
     "Corte Masculino": 50,
     "Barba": 40,
@@ -22,7 +22,6 @@ export default function BookingForm() {
     setLoading(true);
 
     try {
-      // 1. Verificar se o usuário está logado
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         alert("Você precisa estar logado para agendar!");
@@ -32,7 +31,7 @@ export default function BookingForm() {
 
       const dataHoraAgendamento = new Date(`${data}T${hora}:00`).toISOString();
 
-      // 2. Verificar disponibilidade
+      // Verificar disponibilidade
       const { data: existente } = await supabase
         .from('agendamentos')
         .select('id')
@@ -45,7 +44,7 @@ export default function BookingForm() {
         return;
       }
 
-      // 3. Inserir agendamento e obter o ID
+      // Inserir agendamento
       const { data: novoAgendamento, error: insertError } = await supabase
         .from('agendamentos')
         .insert([
@@ -53,36 +52,38 @@ export default function BookingForm() {
             servico, 
             data_hora: dataHoraAgendamento, 
             user_id: user.id,
-            pago: false 
+            pago: false,
+            metodo_pagamento: metodoPagamento // Importante salvar a intenção no banco
           }
         ])
         .select();
 
       if (insertError) throw insertError;
 
-      // 4. CHAMADA AO STRIPE
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          servico, 
-          preco: precos[servico], 
-          agendamentoId: novoAgendamento?.[0]?.id 
-        }),
-      });
+      // LÓGICA CONDICIONAL:
+      if (metodoPagamento === 'stripe') {
+        // Se escolheu pagar agora, vai para o checkout
+        const response = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            servico, 
+            preco: precos[servico], 
+            agendamentoId: novoAgendamento?.[0]?.id 
+          }),
+        });
 
-      const session = await response.json();
-
-      if (session.url) {
-        window.location.href = session.url;
+        const session = await response.json();
+        if (session.url) window.location.href = session.url;
+        else throw new Error("Falha ao gerar link de pagamento.");
       } else {
-        throw new Error("Falha ao gerar link de pagamento.");
+        // Se escolheu pagar no local, vai direto para o perfil
+        alert("✅ Agendamento realizado! Pagamento será feito na barbearia.");
+        router.push('/perfil');
       }
 
     } catch (error: unknown) {
-      // Tratamento de erro seguro sem usar 'any'
       const errorMessage = error instanceof Error ? error.message : "Erro inesperado";
-      console.error("Erro ao processar agendamento:", errorMessage);
       alert(`Erro: ${errorMessage}`);
     } finally {
       setLoading(false);
@@ -105,34 +106,49 @@ export default function BookingForm() {
         <option value="Combo Completo">Corte + Barba - R$ 80,00</option>
       </select>
 
-      <input 
-        required
-        type="date" 
-        className="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none focus:border-amber-500"
-        value={data}
-        min={new Date().toISOString().split('T')[0]}
-        onChange={(e) => setData(e.target.value)}
-      />
+      <div className="grid grid-cols-2 gap-4">
+        <input 
+          required
+          type="date" 
+          className="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none focus:border-amber-500"
+          value={data}
+          min={new Date().toISOString().split('T')[0]}
+          onChange={(e) => setData(e.target.value)}
+        />
+        <input 
+          required
+          type="time" 
+          className="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none focus:border-amber-500"
+          value={hora}
+          onChange={(e) => setHora(e.target.value)}
+        />
+      </div>
 
-      <input 
-        required
-        type="time" 
-        className="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none focus:border-amber-500"
-        value={hora}
-        onChange={(e) => setHora(e.target.value)}
-      />
+      {/* SELEÇÃO DE MÉTODO DE PAGAMENTO */}
+      <div className="flex gap-2 p-1 bg-black rounded-xl border border-zinc-800">
+        <button
+          type="button"
+          onClick={() => setMetodoPagamento('stripe')}
+          className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase transition-all ${metodoPagamento === 'stripe' ? 'bg-amber-500 text-black' : 'text-zinc-500'}`}
+        >
+          Cartão / Pix
+        </button>
+        <button
+          type="button"
+          onClick={() => setMetodoPagamento('local')}
+          className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase transition-all ${metodoPagamento === 'local' ? 'bg-amber-500 text-black' : 'text-zinc-500'}`}
+        >
+          Pagar no Local
+        </button>
+      </div>
 
       <button 
         disabled={loading}
         type="submit"
         className="w-full bg-amber-500 text-black font-black py-4 rounded-xl uppercase hover:bg-amber-600 transition-all disabled:opacity-50 shadow-lg shadow-amber-500/10"
       >
-        {loading ? 'Preparando Pagamento...' : 'Confirmar e Pagar Agora'}
+        {loading ? 'Processando...' : metodoPagamento === 'stripe' ? 'Confirmar e Pagar Agora' : 'Confirmar Agendamento'}
       </button>
-      
-      <p className="text-[10px] text-center text-zinc-500 uppercase font-bold tracking-widest">
-        Pagamento 100% seguro via Stripe
-      </p>
     </form>
   );
 }
