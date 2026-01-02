@@ -15,7 +15,7 @@ export default function AdminPainel() {
       const { data: { user } } = await supabase.auth.getUser();
       
       // Lógica de proteção: substitua pelo seu e-mail de admin
-      if (!user || user.email !== 'seu-email@exemplo.com') {
+      if (!user || user.email !== 'mendoncaoffice@gmail.com') {
         router.push('/login');
         return;
       }

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-// Componente visual para simular o Stripe Elements (ou integrar o real depois)
+// Componente visual para o formulário de cartão
 const CardForm = ({ onCancel, onSave }: any) => (
   <div className="bg-zinc-900 p-6 rounded-3xl border border-amber-500/30 space-y-4 animate-in fade-in zoom-in duration-300">
     <div className="flex justify-between items-center mb-2">
@@ -12,7 +12,6 @@ const CardForm = ({ onCancel, onSave }: any) => (
       <button onClick={onCancel} className="text-zinc-500 text-[10px] uppercase font-bold">Cancelar</button>
     </div>
     
-    {/* Em um cenário 100% real, aqui entraria o <CardElement /> do Stripe */}
     <div className="space-y-4">
       <div className="bg-black border border-zinc-800 p-4 rounded-xl">
         <input type="text" placeholder="NÚMERO DO CARTÃO" className="w-full bg-transparent text-xs outline-none text-white placeholder:text-zinc-800 font-mono" />
@@ -43,6 +42,9 @@ export default function Perfil() {
   const [telefone, setTelefone] = useState('');
   const [mostrarFormCartao, setMostrarFormCartao] = useState(false);
   const router = useRouter();
+
+  // DEFINIÇÃO DO EMAIL ADMIN (Corrigido para não dar erro)
+  const SEU_EMAIL_ADMIN = 'mendoncaoffice@gmail.com'; 
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -82,7 +84,6 @@ export default function Perfil() {
   };
 
   const handleSalvarCartao = () => {
-    // Aqui você conectaria com a sua API Route do Stripe
     alert("Iniciando validação segura com o Stripe...");
     setTimeout(() => {
       alert("Cartão salvo com sucesso!");
@@ -100,16 +101,30 @@ export default function Perfil() {
     <div className="min-h-screen bg-black text-white p-6 md:p-12">
       <div className="max-w-5xl mx-auto">
         
+        {/* BOTÃO DE ADMIN - SÓ APARECE PARA VOCÊ */}
+        {user?.email === SEU_EMAIL_ADMIN && (
+          <div className="mb-8 p-6 bg-amber-500/10 border border-amber-500/20 rounded-3xl flex justify-between items-center animate-in slide-in-from-top duration-700">
+            <div>
+              <p className="text-[10px] font-black uppercase text-amber-500 tracking-[0.2em]">Acesso Administrativo</p>
+              <p className="text-xs text-zinc-400">Olá, Mendonça. O sistema reconheceu seu acesso de dono.</p>
+            </div>
+            <button 
+              onClick={() => router.push('/admin')}
+              className="bg-amber-500 text-black px-8 py-3 rounded-2xl font-black uppercase text-[10px] hover:bg-white transition-all shadow-xl shadow-amber-500/10"
+            >
+              Abrir Painel Admin
+            </button>
+          </div>
+        )}
+
         <header className="mb-12">
-          <h1 className="text-4xl font-black uppercase italic tracking-tighter">
+          <h1 className="text-4xl font-black uppercase italic tracking-tighter text-white">
             Minha <span className="text-amber-500">Área</span>
           </h1>
           <p className="text-zinc-500 text-[10px] font-bold tracking-[0.3em] uppercase mt-2">Gestão de Perfil e Pagamentos</p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          
-          {/* COLUNA ESQUERDA - DADOS E CARTÕES (4 colunas) */}
           <div className="lg:col-span-5 space-y-12">
             <section className="space-y-6">
               <div className="flex items-center gap-4">
@@ -118,7 +133,7 @@ export default function Perfil() {
                 <div className="h-px bg-zinc-800 flex-1"></div>
               </div>
               
-              <div className="bg-zinc-900/30 p-8 rounded-[2rem] border border-zinc-800/50 space-y-5">
+              <div className="bg-zinc-900/30 p-8 rounded-[2rem] border border-zinc-800/50 space-y-5 shadow-2xl">
                 <div className="space-y-2">
                   <label className="text-[9px] uppercase font-black text-zinc-600 ml-2">Nome de Exibição</label>
                   <input type="text" value={nome} onChange={(e) => setNome(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-2xl p-4 text-sm focus:border-amber-500 outline-none transition-all" />
@@ -127,7 +142,7 @@ export default function Perfil() {
                   <label className="text-[9px] uppercase font-black text-zinc-600 ml-2">WhatsApp de Contato</label>
                   <input type="text" value={telefone} onChange={(e) => setTelefone(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-2xl p-4 text-sm focus:border-amber-500 outline-none transition-all" />
                 </div>
-                <button onClick={atualizarPerfil} className="w-full bg-white text-black font-black uppercase text-[10px] py-4 rounded-2xl hover:bg-amber-500 transition-all">Atualizar Cadastro</button>
+                <button onClick={atualizarPerfil} className="w-full bg-white text-black font-black uppercase text-[10px] py-4 rounded-2xl hover:bg-amber-500 transition-all shadow-lg">Atualizar Cadastro</button>
               </div>
             </section>
 
@@ -154,7 +169,6 @@ export default function Perfil() {
             </section>
           </div>
 
-          {/* COLUNA DIREITA - AGENDAMENTOS (7 colunas) */}
           <div className="lg:col-span-7 space-y-6">
             <div className="flex items-center gap-4">
               <div className="h-px bg-zinc-800 flex-1"></div>
@@ -198,7 +212,6 @@ export default function Perfil() {
               </button>
             </div>
           </div>
-
         </div>
       </div>
     </div>
