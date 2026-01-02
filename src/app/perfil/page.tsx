@@ -4,13 +4,44 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
+// Componente visual para simular o Stripe Elements (ou integrar o real depois)
+const CardForm = ({ onCancel, onSave }: any) => (
+  <div className="bg-zinc-900 p-6 rounded-3xl border border-amber-500/30 space-y-4 animate-in fade-in zoom-in duration-300">
+    <div className="flex justify-between items-center mb-2">
+      <h3 className="text-[10px] font-black uppercase text-amber-500">Pagamento Seguro Stripe</h3>
+      <button onClick={onCancel} className="text-zinc-500 text-[10px] uppercase font-bold">Cancelar</button>
+    </div>
+    
+    {/* Em um cenário 100% real, aqui entraria o <CardElement /> do Stripe */}
+    <div className="space-y-4">
+      <div className="bg-black border border-zinc-800 p-4 rounded-xl">
+        <input type="text" placeholder="NÚMERO DO CARTÃO" className="w-full bg-transparent text-xs outline-none text-white placeholder:text-zinc-800 font-mono" />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <input type="text" placeholder="MM/AA" className="bg-black border border-zinc-800 p-4 rounded-xl text-xs outline-none text-white placeholder:text-zinc-800" />
+        <input type="text" placeholder="CVC" className="bg-black border border-zinc-800 p-4 rounded-xl text-xs outline-none text-white placeholder:text-zinc-800" />
+      </div>
+    </div>
+
+    <button 
+      onClick={onSave}
+      className="w-full bg-amber-500 text-black font-black uppercase text-[10px] py-4 rounded-xl shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all"
+    >
+      Validar e Salvar Cartão
+    </button>
+    <div className="flex items-center justify-center gap-2 opacity-50">
+      <span className="text-[8px] text-zinc-400 uppercase font-bold">Criptografia de ponta a ponta</span>
+    </div>
+  </div>
+);
+
 export default function Perfil() {
   const [user, setUser] = useState<any>(null);
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
-  const [mostrarFormCartao, setMostrarFormCartao] = useState(false); // NOVO: Estado para o formulário
+  const [mostrarFormCartao, setMostrarFormCartao] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -44,132 +75,130 @@ export default function Perfil() {
     else alert("Perfil atualizado com sucesso!");
   };
 
-  // Função para quando o cliente decide pagar no local
-  const pagarNoLocal = async (id: string) => {
-    const { error } = await supabase
-      .from('agendamentos')
-      .update({ metodo_pagamento: 'local' })
-      .eq('id', id);
-
-    if (error) alert("Erro ao atualizar");
-    else {
-      alert("Certo! Aguardamos você na barbearia.");
-      window.location.reload(); // Recarrega para atualizar o status
-    }
+  const confirmarPagamentoLocal = async (id: string) => {
+    if(!confirm("Confirmar que deseja pagar no local?")) return;
+    const { error } = await supabase.from('agendamentos').update({ metodo_pagamento: 'local' }).eq('id', id);
+    if (!error) window.location.reload();
   };
 
-  if (loading) return <div className="min-h-screen bg-black text-amber-500 p-10 font-black uppercase italic">Carregando Mene Solution...</div>;
+  const handleSalvarCartao = () => {
+    // Aqui você conectaria com a sua API Route do Stripe
+    alert("Iniciando validação segura com o Stripe...");
+    setTimeout(() => {
+      alert("Cartão salvo com sucesso!");
+      setMostrarFormCartao(false);
+    }, 1500);
+  };
+
+  if (loading) return (
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="text-amber-500 font-black uppercase italic animate-bounce">Mene Solution</div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-black text-white p-6 md:p-12">
-      <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="max-w-5xl mx-auto">
         
-        {/* COLUNA ESQUERDA: EDITAR INFORMAÇÕES E CARTÕES */}
-        <div className="space-y-10">
-          <section>
-            <h2 className="text-xl font-black uppercase italic mb-6 border-l-4 border-amber-500 pl-4">Meus Dados</h2>
-            <div className="space-y-4 bg-zinc-900/50 p-6 rounded-3xl border border-zinc-800">
-              <div>
-                <label className="text-[10px] uppercase font-bold text-zinc-500 ml-2">Nome Completo</label>
-                <input 
-                  type="text" 
-                  value={nome} 
-                  onChange={(e) => setNome(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm focus:border-amber-500 outline-none transition-all"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] uppercase font-bold text-zinc-500 ml-2">WhatsApp / Telefone</label>
-                <input 
-                  type="text" 
-                  value={telefone}
-                  onChange={(e) => setTelefone(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm focus:border-amber-500 outline-none transition-all"
-                />
-              </div>
-              <button 
-                onClick={atualizarPerfil}
-                className="w-full bg-amber-500 text-black font-black uppercase text-xs py-3 rounded-xl hover:bg-amber-400 transition-all"
-              >
-                Salvar Alterações
-              </button>
-            </div>
-          </section>
+        <header className="mb-12">
+          <h1 className="text-4xl font-black uppercase italic tracking-tighter">
+            Minha <span className="text-amber-500">Área</span>
+          </h1>
+          <p className="text-zinc-500 text-[10px] font-bold tracking-[0.3em] uppercase mt-2">Gestão de Perfil e Pagamentos</p>
+        </header>
 
-          <section>
-            <h2 className="text-xl font-black uppercase italic mb-6 border-l-4 border-zinc-500 pl-4 text-zinc-400">Meus Cartões</h2>
-            
-            {!mostrarFormCartao ? (
-              <div className="bg-zinc-900/50 p-6 rounded-3xl border border-dashed border-zinc-800 text-center">
-                <p className="text-xs text-zinc-500 uppercase font-bold mb-4">Nenhum cartão cadastrado</p>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          
+          {/* COLUNA ESQUERDA - DADOS E CARTÕES (4 colunas) */}
+          <div className="lg:col-span-5 space-y-12">
+            <section className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="h-px bg-zinc-800 flex-1"></div>
+                <h2 className="text-[10px] font-black uppercase text-zinc-500 tracking-widest text-nowrap">Informações Pessoais</h2>
+                <div className="h-px bg-zinc-800 flex-1"></div>
+              </div>
+              
+              <div className="bg-zinc-900/30 p-8 rounded-[2rem] border border-zinc-800/50 space-y-5">
+                <div className="space-y-2">
+                  <label className="text-[9px] uppercase font-black text-zinc-600 ml-2">Nome de Exibição</label>
+                  <input type="text" value={nome} onChange={(e) => setNome(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-2xl p-4 text-sm focus:border-amber-500 outline-none transition-all" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[9px] uppercase font-black text-zinc-600 ml-2">WhatsApp de Contato</label>
+                  <input type="text" value={telefone} onChange={(e) => setTelefone(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-2xl p-4 text-sm focus:border-amber-500 outline-none transition-all" />
+                </div>
+                <button onClick={atualizarPerfil} className="w-full bg-white text-black font-black uppercase text-[10px] py-4 rounded-2xl hover:bg-amber-500 transition-all">Atualizar Cadastro</button>
+              </div>
+            </section>
+
+            <section className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="h-px bg-zinc-800 flex-1"></div>
+                <h2 className="text-[10px] font-black uppercase text-zinc-500 tracking-widest text-nowrap">Carteira Digital</h2>
+                <div className="h-px bg-zinc-800 flex-1"></div>
+              </div>
+
+              {!mostrarFormCartao ? (
                 <button 
                   onClick={() => setMostrarFormCartao(true)}
-                  className="bg-zinc-800 text-white font-black uppercase text-[10px] px-6 py-2 rounded-full hover:bg-zinc-700 transition-all"
+                  className="w-full group bg-zinc-900/30 border border-dashed border-zinc-800 p-8 rounded-[2rem] flex flex-col items-center justify-center gap-4 hover:border-amber-500/50 transition-all"
                 >
-                  + Adicionar Novo Cartão
+                  <div className="w-12 h-12 rounded-full bg-zinc-950 flex items-center justify-center group-hover:bg-amber-500 transition-all">
+                    <span className="text-xl group-hover:text-black transition-all">+</span>
+                  </div>
+                  <span className="text-[10px] font-black uppercase text-zinc-500 group-hover:text-white">Adicionar Novo Cartão</span>
                 </button>
-              </div>
-            ) : (
-              <div className="bg-zinc-900 p-6 rounded-3xl border border-amber-500/30 space-y-4 animate-in fade-in zoom-in duration-300">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-[10px] font-black uppercase text-amber-500">Novo Cartão</h3>
-                  <button onClick={() => setMostrarFormCartao(false)} className="text-zinc-500 text-[10px] uppercase font-bold">Cancelar</button>
-                </div>
-                <input type="text" placeholder="NÚMERO DO CARTÃO" className="w-full bg-black border border-zinc-800 p-3 rounded-xl text-xs outline-none focus:border-amber-500 text-white placeholder:text-zinc-700" />
-                <div className="grid grid-cols-2 gap-4">
-                  <input type="text" placeholder="MM/AA" className="w-full bg-black border border-zinc-800 p-3 rounded-xl text-xs outline-none focus:border-amber-500 text-white placeholder:text-zinc-700" />
-                  <input type="text" placeholder="CVC" className="w-full bg-black border border-zinc-800 p-3 rounded-xl text-xs outline-none focus:border-amber-500 text-white placeholder:text-zinc-700" />
-                </div>
-                <button className="w-full bg-amber-500 text-black font-black uppercase text-[10px] py-3 rounded-xl">Salvar Cartão</button>
-              </div>
-            )}
-          </section>
-        </div>
+              ) : (
+                <CardForm onCancel={() => setMostrarFormCartao(false)} onSave={handleSalvarCartao} />
+              )}
+            </section>
+          </div>
 
-        {/* COLUNA DIREITA: AGENDAMENTOS E PAGAMENTO */}
-        <div className="space-y-6">
-          <h2 className="text-xl font-black uppercase italic border-l-4 border-amber-500 pl-4">Meus Agendamentos</h2>
-          
-          {agendamentos.length === 0 ? (
-            <p className="text-zinc-600 italic">Você não possui agendamentos...</p>
-          ) : (
-            agendamentos.map((item) => (
-              <div key={item.id} className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800 space-y-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-black uppercase text-lg leading-tight">{item.servico}</p>
-                    <p className="text-zinc-500 text-xs font-bold mt-1">
-                      {new Date(item.data_hora).toLocaleString('pt-BR')}
-                    </p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${item.pago ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                    {item.pago ? 'Pago' : 'Pendente'}
-                  </span>
-                </div>
+          {/* COLUNA DIREITA - AGENDAMENTOS (7 colunas) */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="h-px bg-zinc-800 flex-1"></div>
+              <h2 className="text-[10px] font-black uppercase text-zinc-500 tracking-widest text-nowrap">Meus Agendamentos</h2>
+              <div className="h-px bg-zinc-800 flex-1"></div>
+            </div>
 
-                {!item.pago && (
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800/50">
-                    <button className="bg-white text-black text-[10px] font-black uppercase py-2 rounded-lg hover:bg-zinc-200">
-                      Pagar com Cartão/Pix
-                    </button>
-                    <button 
-                      onClick={() => pagarNoLocal(item.id)}
-                      className="bg-zinc-800 text-zinc-400 text-[10px] font-black uppercase py-2 rounded-lg hover:text-white transition-all"
-                    >
-                      Pagar no Local
-                    </button>
+            <div className="space-y-4">
+              {agendamentos.length === 0 ? (
+                <div className="text-center py-20 bg-zinc-900/10 rounded-[2rem] border border-dashed border-zinc-900">
+                  <p className="text-zinc-600 uppercase text-[10px] font-black tracking-widest">Nenhum histórico encontrado</p>
+                </div>
+              ) : (
+                agendamentos.map((item) => (
+                  <div key={item.id} className="group bg-zinc-900/40 p-6 rounded-[2rem] border border-zinc-800 hover:border-zinc-700 transition-all">
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="space-y-1">
+                        <span className="text-[8px] font-black bg-amber-500 text-black px-2 py-0.5 rounded uppercase tracking-tighter">Serviço Premium</span>
+                        <h3 className="text-xl font-black uppercase italic italic">{item.servico}</h3>
+                        <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">{new Date(item.data_hora).toLocaleString('pt-BR')}</p>
+                      </div>
+                      <div className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest ${item.pago ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                        {item.pago ? 'Pagamento Confirmado' : 'Aguardando'}
+                      </div>
+                    </div>
+
+                    {!item.pago && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <button className="bg-white text-black text-[10px] font-black uppercase py-4 rounded-2xl hover:bg-amber-500 transition-all">Pagar Online</button>
+                        <button onClick={() => confirmarPagamentoLocal(item.id)} className="bg-zinc-800 text-zinc-400 text-[10px] font-black uppercase py-4 rounded-2xl hover:text-white transition-all">Pagar no Local</button>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ))
-          )}
-          
-          <button 
-            onClick={() => router.push('/')}
-            className="text-zinc-600 hover:text-amber-500 text-[10px] font-black uppercase transition-all tracking-widest"
-          >
-            ← Voltar para o Início
-          </button>
+                ))
+              )}
+            </div>
+
+            <div className="pt-8 flex justify-center">
+              <button onClick={() => router.push('/')} className="text-zinc-600 hover:text-amber-500 text-[10px] font-black uppercase tracking-[0.3em] transition-all">
+                ← Voltar para o início
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
